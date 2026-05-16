@@ -254,7 +254,7 @@ void UI_Constructor::displayCallActivity() {
                     : "");
             iconItem->setTextAlignment(Qt::AlignCenter);
             ui->tableWidgetCalls->setItem(row, col++, iconItem);
-            if (hasMessage || hasACK || hasCQ || hasThrough) {
+            if (hasMessage || hasACK || hasCQ || hasThrough || isBlocked) {
                 showIconColumn = true;
             }
 
