@@ -70,8 +70,10 @@ jobs:
           path: docs/html
 
 # Only run deploy if we are on master branch
+#    if: github.ref == 'refs/heads/master'
+# Try deploying on/from release branch or master. check paths afterwards
   deploy:
-    if: github.ref == 'refs/heads/master'
+    if: startsWith(github.ref, 'ref/head/release/') || contains(github.ref, '/tags/release') || contains(github.ref, 'refs/heads/master')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
