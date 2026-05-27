@@ -1,7 +1,7 @@
 # Building JS8Call on MacOS
 
 # MacOS Prerequisites:
-You will need Xcode commandline tools installed. Xcode can be downloaded from the Apple Store for your Mac, or you can install just the command line tools by opening Terminal and typing xcode-select --install. For this example I used Xcode 16.2 on MacOS 15 Sequoia
+You will need Xcode commandline tools installed. Xcode can be downloaded from the Apple Store for your Mac, or you can install just the command line tools by opening Terminal and typing xcode-select --install. For this example I used Xcode 26.0.1 on MacOS 26 Tahoe
 
 Obtain cmake v4.03 from https://github.com/Kitware/CMake/releases/download/v4.0.3/cmake-4.0.3.tar.gz Unpack the cmake source archive with Finder and follow the instructions in the README.rst to build and install cmake on MacOS. This will be in Terminal by using cd to change into the cmake-4.0.3 directory and running the following command:
 ```
@@ -15,7 +15,7 @@ Below are the required libraries and tested versions for a JS8Call-improved buil
 
 * libusb-1.0.29 (NOTE: requires a version patched for MacOS 26, which is available in our pre-built libraries)
 
-* Hamlib-4.7.0
+* Hamlib-4.7.1
 
 * fftw-3.3.10
 
@@ -27,7 +27,7 @@ Below are the required libraries and tested versions for a JS8Call-improved buil
 
     If you wish to build the libraries yourself you can clone this [repository](https://github.com/JS8Call-improved/js8lib) and follow the developer instructions. You can check out one of the MacOS branches with `git switch branch-name` and follow the instructions to build your libraries. It's optional to build Qt with the developer library. I recommend building the base libraries and obtaining Qt 6.9.3 with the Online Installer from the Qt Group for Intel builds. For Apple silicon builds you must build the Qt libraries yourself.
     
-    Pre-built libraries without Qt6 can be downloaded [here](https://github.com/JS8Call-improved/js8lib/releases/tag/lib%2F3.0)
+    Pre-built libraries with or without Qt6 can be downloaded [here](https://github.com/JS8Call-improved/js8lib/releases/tag/lib%2F3.0) for Apple silicon Macs. A pre-built library with Qt6 for Intel Mac is not available.
 
 *   In Terminal create the directory structure to build JS8Call-improved with the following command.
     ```
@@ -77,10 +77,16 @@ cmake --build . --parallel && cmake --install .
 
 The Qt6.9.3 library that you just built can be used over and over again to build JS8Call. Since the Qt sources are huge, you can delete the ~/development/Qt6-build source directory for Qt6.
 
-Now we can finally proceed with building JS8Call. The following command set will have to be modified depending on if you are doing and Intel build using Qt from the online installer, or are doing an Apple silicon build with Qt built from source code. The command as shown is for the Apple silicon build - note the location of the Qt library and adjust accordingly for an Intel build.
+Now we can finally proceed with building JS8Call. The following command set will have to be modified depending on if you are doing an Intel build using Qt from the online installer, or are doing an Apple silicon build with Qt built from source code. The command as shown is for the Apple silicon build - note the location of the Qt library and adjust accordingly for an Intel build.
 ```
 cd ~/development/JS8Call/src && mkdir build && cd build \
 && cmake -DCMAKE_PREFIX_PATH="/usr/local/js8lib;~/development/JS8Call/Qt6.9.3" -DCMAKE_BUILD_TYPE=Release .. \
+&& cmake --build .
+```
+If building using the pre-built library that contains Qt (Apple silicon only), then the command is as follows.
+```
+cd ~/development/JS8Call/src && mkdir build && cd build \
+&& cmake -DCMAKE_PREFIX_PATH=/usr/local/js8lib -DCMAKE_BUILD_TYPE=Release .. \
 && cmake --build .
 ```
 An issue you may run into is that MacOS apps do not request permissions to use audio input correctly unless the app and libraries are signed with an Apple developer certificate. There is really no way around this. If your build keeps continually asking for permissions to use audio input you can create a free signing certificate that will allow the app to run on your local computer, or other computers with the same AppleID. This free signing certificate can be created from within Xcode if you have an AppleID that uses an icloud email account. Consult Apple's developer documentation [here](https://support.apple.com/guide/keychain-access/create-self-signed-certificates-kyca8916/mac) on how to do this.
