@@ -77,8 +77,8 @@ clear
 echo "NOTES:
 The newest versions of JS8Call require Qt v6.9.3 to run correctly. Most
 linux distributions do not package Qt6.9.3. The JS8Call project has pre-compiled
-Qt6.9.3 libraries by Chris-AC9KH that this script will fetch and install. This
-will not affect whatever version of Qt you have installed from your distribution.
+Qt6.9.3 libraries that this script will fetch and install. This will not affect
+whatever version of Qt you have installed from your distribution.
 The two versions can co-exist and JS8Call will be linked with the
 Qt6.9.3 installation, which will be in your ~/.local/lib/Qt directory.
 
@@ -105,13 +105,7 @@ are running an older version of JS8Call(2.2) it might be using ALSA backend. The
 be no audio on a Linux system with JS8Call-2.3 and later unless it is using PipeWire or
 PulseAudio. When you start up JS8Call it will use your current JS8Call settings
 if you have an existing installation. There is some incompatibility with audio and text
-encoding between JS8Call 2.2 (Fortran/Qt5) and 2.3 and newer (C++/Qt6).
-
-The current JS8Call codebase is coded for Qt6.9.3, developed on MacOS. It attempts
-to be compatible with linux but we rely on linux users to provide feedback on issues that
-may arise to identify linux-specific problems. This is our primary purpose in offering this
-relatively easy method to install and run the latest code, with the proper Qt library, on linux.
-Chris AC9KH, Joe K0OG"
+encoding between JS8Call 2.2 (Fortran/Qt5) and 2.3 and newer (C++/Qt6)."
 user_dialog
 
 read -p "Press Enter to continue" </dev/tty
