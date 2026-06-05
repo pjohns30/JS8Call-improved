@@ -85,9 +85,35 @@ install_deps() {
       libxcb-util-dev libxcb-image0-dev libxcb-keysyms1-dev \
       libxcb-render-util0-dev libxcb-icccm4-dev libxcb-cursor0 \
       libxrender-dev libxi-dev \
-      libpulse-dev libasound2-dev || sudo apt install -y libasound2t64 \
       libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
       libwayland-dev wayland-protocols
+      
+    # Handle libasound rename in Ubuntu 24+
+    sudo apt-get install -y libasound2-dev || sudo apt-get install -y libasound2t64
+    
+  elif [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" || \
+          "$DISTRO" == "endeavouros" || "$DISTRO" == "garuda" ]]; then
+    echo "Detected Arch-based system ($DISTRO), using pacman..."
+    sudo pacman -Syu --noconfirm \
+      cmake ninja gcc perl python git wget \
+      openssl fontconfig freetype2 \
+      harfbuzz libjpeg-turbo libpng \
+      zlib brotli dbus glib2 \
+      at-spi2-core mesa libglvnd \
+      libdrm libinput \
+      vulkan-icd-loader \
+      libxkbcommon \
+      xcb-util xcb-util-image xcb-util-keysyms \
+      xcb-util-renderutil xcb-util-wm xcb-util-cursor \
+      libxrender libxi \
+      libpulse alsa-lib \
+      gst-plugins-base \
+      wayland wayland-protocols \
+      libxrandr libxext libxfixes \
+      libxcb libxshmfence \
+      libx11 \
+      yasm nasm \
+      clang llvm
 
   else
     echo "Unsupported distribution: $DISTRO"
