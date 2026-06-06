@@ -7,7 +7,7 @@ set -e
 # --- Variables ---
 red="\033[0;31m"
 clear_color="\033[0m"
-JS8_VERSION="master"
+JS8_VERSION="release/3.0.2"
 JS8_QT_DIR="$HOME/.local/lib/Qt"
 JS8_LIB_DIR="$HOME/.local/lib/js8lib"
 
@@ -231,7 +231,7 @@ mkdir -p "$HOME/.local/share/icons"
 # --- Detect architecture ---
 clear
 divider
-JS8_ARCH=$(arch)
+JS8_ARCH=$(uname -m)
 echo "System architecture: $JS8_ARCH"
 divider
 sleep 2
