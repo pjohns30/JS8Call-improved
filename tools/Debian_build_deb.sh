@@ -168,6 +168,8 @@ Package: js8call
 Version: ${JS8_VERSION}
 Architecture: ${DEB_ARCH}
 Maintainer: JS8Call-improved Project <https://github.com/JS8Call-improved>
+Section: hamradio
+Homepage: https://github.com/JS8Call-improved/JS8Call-improved
 Description: JS8Call digital weak signal communication
  JS8Call is a messaging application built on top of the JS8 digital
  mode, providing keyboard-to-keyboard messaging, store-and-forward
