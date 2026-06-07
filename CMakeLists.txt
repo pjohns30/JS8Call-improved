@@ -15,11 +15,12 @@ cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 #------------------------------------------------------------------------------#
 # Policies; add to this list as required:
 #
+#  - CMP0144: find_package uses upper-case <PACKAGENAME>_ROOT variables.
 #  - CMP0167: Require a Boost 1.70+ installation, with cmake support.
 #  - CMP0177: DESTINATION paths are normalized.
 #------------------------------------------------------------------------------#
 
-foreach(policy CMP0167 CMP0177)
+foreach(policy CMP0144 CMP0167 CMP0177)
   if(POLICY ${policy})
     cmake_policy(SET ${policy} NEW)
   endif()

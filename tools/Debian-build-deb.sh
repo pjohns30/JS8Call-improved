@@ -112,7 +112,6 @@ mkdir build && cd build
 cmake \
     -DCMAKE_PREFIX_PATH="/usr/lib/js8call;/usr/lib/js8call/Qt" \
     -DHAMLIB_ROOT="/usr/lib/js8call" \
-    -Dhamlib_ROOT="/usr/lib/js8call" \
     -DCMAKE_BUILD_TYPE=Release \
     ..
 

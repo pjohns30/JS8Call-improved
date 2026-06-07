@@ -388,7 +388,6 @@ cd "$HOME/development/JS8Call-improved/build"
 cmake \
   -DCMAKE_PREFIX_PATH="${JS8_INSTALL_PREFIX};${JS8_QT_DIR}" \
   -DHAMLIB_ROOT="${JS8_INSTALL_PREFIX}" \
-  -Dhamlib_ROOT="${JS8_INSTALL_PREFIX}" \
   ..
 cmake --build . --parallel $(nproc)
 
