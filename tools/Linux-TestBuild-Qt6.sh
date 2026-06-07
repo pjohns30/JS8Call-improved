@@ -4,6 +4,23 @@ set -e
 ####### Build Qt6 for JS8Call #######
 ####### Ubuntu 24.04 Server only  #######
 
+# --- Qt version to build ---
+QT_VERSION="6.9.3"
+QT_TAG="v${QT_VERSION}"
+
+clear
+echo -e "This script is only for building Qt from source on linux
+for testing purposes. Do NOT use it to build a distribution Qt package.
+It will build and install Qt to ~/.local/lib/Qt and create a tarball
+of your Qt build that can be saved and unpacked for testing JS8Call
+builds. In the header of this script you can define the version of Qt
+you wish to download and build.
+
+This script is restricted to building on Ubuntu 24 Server to ensure your
+Qt build is glibc-portable. If you wish to build Qt on a different platform
+you must comment out the 'Restrict to Ubuntu 24.04 only' section in the script."
+read -p "Press Enter to continue" </dev/tty
+
 # --- Detect distro ---
 if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -26,7 +43,7 @@ if [[ "$VERSION_ID" != "24.04" ]]; then
   exit 1
 fi
 
-BUILD_ARCH=$(arch)
+BUILD_ARCH=$(uname -m)
 if [[ "$BUILD_ARCH" != "x86_64" && "$BUILD_ARCH" != "aarch64" ]]; then
   echo "Unsupported architecture: $BUILD_ARCH"
   echo "This script supports x86_64 and aarch64 only."
@@ -39,8 +56,8 @@ echo "######################################################################"
 
 install_deps() {
     echo "Installing build dependencies for Ubuntu $VERSION_ID / $BUILD_ARCH..."
-    sudo apt update
-    sudo apt install -y \
+    sudo apt-get update
+    sudo apt-get install -y \
         cmake ninja-build g++ perl python3 git \
         libssl-dev libfontconfig1-dev libfreetype-dev \
         libharfbuzz-dev libjpeg-dev libpng-dev \
@@ -91,7 +108,7 @@ export PKG_CONFIG_PATH=/usr/local/ffmpeg/lib/pkgconfig:$PKG_CONFIG_PATH
 cd ~/development
 git clone https://github.com/qt/qt5.git Qt6
 cd Qt6
-git checkout v6.9.3
+git checkout ${QT_TAG}
 ./init-repository --module-subset=qtbase,qtshadertools,qtmultimedia,\
 qtimageformats,qtserialport,qtsvg,qtwebsockets,qtwayland,\
 qtdeclarative,qttools,qtpositioning,qttranslations,qtlanguageserver,\
@@ -123,7 +140,7 @@ export PKG_CONFIG_PATH=/usr/local/ffmpeg/lib/pkgconfig:$PKG_CONFIG_PATH
 cmake --build . --parallel $(nproc)
 cmake --install .
 
-echo "Qt6 build complete. Installed to ~/.local/lib/Qt"
+echo "Qt${QT_VERSION} build complete. Installed to ~/.local/lib/Qt"
 echo "######################################################################"
 
 # --- Bundle libicu ---
@@ -135,19 +152,16 @@ else
   ICU_LIB_PATH="/usr/lib/x86_64-linux-gnu"
 fi
 
-cp ${ICU_LIB_PATH}/libicui18n.so* ~/.local/lib/Qt/lib/
-cp ${ICU_LIB_PATH}/libicuuc.so* ~/.local/lib/Qt/lib/
-cp ${ICU_LIB_PATH}/libicudata.so* ~/.local/lib/Qt/lib/
+cp -P ${ICU_LIB_PATH}/libicui18n.so* ~/.local/lib/Qt/lib/
+cp -P ${ICU_LIB_PATH}/libicuuc.so* ~/.local/lib/Qt/lib/
+cp -P ${ICU_LIB_PATH}/libicudata.so* ~/.local/lib/Qt/lib/
 
 echo "libicu libraries bundled successfully."
 echo "######################################################################"
 
 # --- Create tar.gz archive ---
-TARBALL="Qt6.9.3_Linux_${BUILD_ARCH}.tar.gz"
+TARBALL="Qt${QT_VERSION}_Linux_${BUILD_ARCH}.tar.gz"
 echo "Creating archive $HOME/${TARBALL}..."
 tar -czf "$HOME/${TARBALL}" -C "$HOME/.local/lib" Qt
 
-echo "######################################################################"
-echo "Archive created: $HOME/${TARBALL}"
-echo "Ready to upload to GitHub releases."
 echo "######################################################################"

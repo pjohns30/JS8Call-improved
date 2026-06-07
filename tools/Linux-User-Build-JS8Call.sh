@@ -2,14 +2,22 @@
 set -e
 
 # (C) copyright 2025 Chris Olson AC9KH, Joseph Counsil K0OG
-# Builds and installs JS8Call from source for local user.
+# Builds and installs JS8Call from source on a linux system.
+# Requires sudo access. Installs to /usr/lib/js8call and /usr/bin.
 
 # --- Variables ---
 red="\033[0;31m"
 clear_color="\033[0m"
 JS8_VERSION="master"
-JS8_QT_DIR="$HOME/.local/lib/Qt"
-JS8_LIB_DIR="$HOME/.local/lib/js8lib"
+JS8_INSTALL_PREFIX="/usr/lib/js8call"
+JS8_QT_DIR="${JS8_INSTALL_PREFIX}/Qt"
+
+# Legacy install paths — used to detect and remove old ~/.local installs
+LEGACY_BIN="$HOME/.local/bin/JS8Call"
+LEGACY_QT_DIR="$HOME/.local/lib/Qt"
+LEGACY_LIB_DIR="$HOME/.local/lib/js8lib"
+LEGACY_DESKTOP="$HOME/.local/share/applications/JS8Call.desktop"
+LEGACY_ICON="$HOME/.local/share/icons/icon_128.svg"
 
 # --- Functions ---
 divider() {
@@ -83,14 +91,14 @@ install_deps() {
       mesa-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev \
       libxkbcommon-dev libxkbcommon-x11-dev \
       libxcb-util-dev libxcb-image0-dev libxcb-keysyms1-dev \
-      libxcb-render-util0-dev libxcb-icccm4-dev libxcb-cursor0 \
+      libxcb-render-util0-dev libxcb-icccm4-dev libxcb-cursor-dev \
       libxrender-dev libxi-dev \
       libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
       libwayland-dev wayland-protocols
-      
+
     # Handle libasound rename in Ubuntu 24+
     sudo apt-get install -y libasound2-dev || sudo apt-get install -y libasound2t64
-    
+
   elif [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" || \
           "$DISTRO" == "endeavouros" || "$DISTRO" == "garuda" ]]; then
     echo "Detected Arch-based system ($DISTRO), using pacman..."
@@ -122,26 +130,59 @@ install_deps() {
   fi
 }
 
-# --- Check for existing installation ---
+# --- Check for legacy ~/.local installation and offer to remove it ---
 clear
 divider
+echo "Checking for legacy installation....."
+if [ -f "${LEGACY_BIN}" ]; then
+  divider
+  echo -e "${red}A legacy JS8Call installation was found in ~/.local.
+
+The new installer places JS8Call and its libraries in system paths
+(/usr/bin and /usr/lib/js8call) for consistency with the .deb package.
+The legacy installation should be removed.${clear_color}"
+  divider
+  read -p "Remove legacy ~/.local installation? Yes(y) / No(n): " REMOVE_LEGACY </dev/tty
+  if [ "${REMOVE_LEGACY}" = "y" ]; then
+    echo "Removing legacy JS8Call binary..."
+    rm -f "${LEGACY_BIN}"
+    echo "Removing legacy Qt 6.9.3..."
+    rm -rf "${LEGACY_QT_DIR}"
+    echo "Removing legacy libraries..."
+    rm -rf "${LEGACY_LIB_DIR}"
+    echo "Removing legacy desktop entry..."
+    rm -f "${LEGACY_DESKTOP}"
+    echo "Removing legacy icon..."
+    rm -f "${LEGACY_ICON}"
+    divider
+    echo "Legacy installation removed."
+    divider
+    sleep 2
+  fi
+fi
+
+# --- Check for existing system installation ---
+divider
 echo "Checking for existing installation....."
-if [ -e "$HOME/.local/bin/JS8"* ] 2>/dev/null; then
+if [ -f "/usr/bin/JS8Call" ]; then
   divider
   echo "An existing JS8Call installation was found. Do you want to
 uninstall it? Selecting No will overwrite it with the new version."
   read -p "Uninstall current JS8Call? Yes(y) / No(n): " UNINSTALL </dev/tty
   if [ "${UNINSTALL}" = "y" ]; then
     echo "Removing JS8Call binary..."
-    rm -f "$HOME/.local/bin/JS8"*
+    sudo rm -f /usr/bin/JS8Call
     echo "Removing Qt 6.9.3..."
-    rm -rf "$JS8_QT_DIR"
+    sudo rm -rf "${JS8_QT_DIR}"
     echo "Removing libraries..."
-    rm -rf "$JS8_LIB_DIR"
+    sudo rm -rf "${JS8_INSTALL_PREFIX}"
     echo "Removing desktop entry..."
-    rm -f "$HOME/.local/share/applications/JS8Call.desktop"
+    sudo rm -f /usr/share/applications/JS8Call.desktop
     echo "Removing icon..."
-    rm -f "$HOME/.local/share/icons/icon_128.svg"
+    sudo rm -f /usr/share/icons/hicolor/scalable/apps/js8call.svg
+    # Remove ldconfig entry
+    sudo rm -f /etc/ld.so.conf.d/js8call.conf
+    sudo ldconfig
     divider
     echo "JS8Call has been uninstalled.
 To reinstall, run this script again."
@@ -154,10 +195,10 @@ fi
 clear
 divider
 echo -e "This script will fetch necessary sources and dependencies to build
-JS8Call and install it for the local user only on your system.
+JS8Call and install it on your system. It requires sudo access to install
+to system paths (/usr/bin and /usr/lib/js8call).
 If you already have an existing JS8Call installation from your distribution
-or downloaded from the Releases it will not affect that and you will be able
-to run either version of the program, but not at the same time.
+you will be able to run either version, but not at the same time.
 Please see the NOTES on the next page:"
 divider
 read -p "Press Enter to continue" </dev/tty
@@ -165,24 +206,26 @@ read -p "Press Enter to continue" </dev/tty
 clear
 echo "NOTES:
 The newest versions of JS8Call require Qt v6.9.3 to run correctly. Most
-linux distributions do not package Qt6.9.3. The JS8Call project has pre-compiled
-Qt6.9.3 libraries by Chris-AC9KH that this script will fetch and install. This
-will not affect whatever version of Qt you have installed from your distribution.
-The two versions can co-exist and JS8Call will be linked with the
-Qt6.9.3 installation, which will be in your ~/.local/lib/Qt6 directory.
+linux distributions do not package Qt6.9.3. The JS8Call project provides
+pre-compiled Qt6.9.3 libraries that this script will fetch and install to
+/usr/lib/js8call/Qt. This will not affect whatever version of Qt you have
+installed from your distribution. The two versions can co-exist and
+JS8Call will be linked with the Qt6.9.3 installation only.
 
-If you run this script a second time after installation, it will ask if you want
-to uninstall JS8Call. The Qt6.9.3 library will also be removed during uninstall.
-The Qt6.9.3 archive downloaded by this script will be saved in your Downloads
-folder. Delete it if you no longer need it.
+JS8Call and its libraries install to:
+  Binary    : /usr/bin/JS8Call
+  Libraries : /usr/lib/js8call
+  Qt 6.9.3  : /usr/lib/js8call/Qt
 
-This script has been tested on Debian 12/13, Mint, Fedora, and Ubuntu 24.
+This is consistent with the JS8Call .deb package. If you have previously
+installed JS8Call via the .deb package this script will overwrite it.
 
-The JS8Call menu item is tested with Gnome. It should work on KDE since linux
-desktops follow freedesktop.org conventions, though this is not always the case.
-If you don't see a menu item on KDE under the Other category, the binary is at
-~/.local/bin/JS8Call — you can symlink it or launch it directly. KDE may require
-a logout/login to refresh menus."
+Legacy versions of JS8Call (i.e. <=2.3.1) are named with a lower-case
+convention (js8call). Versions 2.4.0 and later are named with an upper-case
+convention (JS8Call). These two versions can co-exist on Linux.
+
+If you run this script a second time after installation, it will ask if
+you want to uninstall JS8Call. All libraries will also be removed."
 divider
 read -p "Press Enter to continue" </dev/tty
 
@@ -190,9 +233,16 @@ clear
 echo "AUDIO:
 Newer versions of Qt use the FFmpeg audio backend. ALSA audio is deprecated.
 JS8Call 2.3 and later requires PipeWire or PulseAudio — there will be no audio
-without one of these. When JS8Call starts it will use your existing settings if
-you have a prior installation. Note there is some incompatibility with audio and
-text encoding between JS8Call 2.2 (Fortran/Qt5) and 2.3+ (C++/Qt6)."
+without one of these.
+
+SETTINGS:
+JS8Call stores its configuration in ~/.config/JS8Call.ini (versions 2.5.0
+and later) and ~/.config/js8call.ini (versions 2.3.x and earlier). These
+files can co-exist without conflict. If you are upgrading from 2.3.x your
+old settings will NOT be automatically migrated — JS8Call will start with
+default settings on first launch. You will need to reconfigure your
+audio devices, callsign, and radio settings. Your old js8call.ini remains
+untouched and will continue to be used if you run the legacy version."
 divider
 read -p "Press Enter to continue" </dev/tty
 
@@ -204,7 +254,7 @@ Debian does not add users to the sudo group by default. If you have not
 already done this, run the following as root, replacing
 ${red}your_username${clear_color} with your login name:
 
-  ${red}usermod -aG sudo your_username${clear_color}
+  ${red}/usr/sbin/usermod -aG sudo your_username${clear_color}
 
 You will need to reboot for this change to take effect."
   divider
@@ -223,10 +273,10 @@ install_deps
 
 # --- Create development directory ---
 mkdir -p "$HOME/development"
-mkdir -p "$HOME/.local/bin"
-mkdir -p "$HOME/.local/lib"
-mkdir -p "$HOME/.local/share/applications"
-mkdir -p "$HOME/.local/share/icons"
+
+# --- Create system library directory owned by root ---
+sudo mkdir -p "${JS8_INSTALL_PREFIX}"
+sudo chown root:root "${JS8_INSTALL_PREFIX}"
 
 # --- Detect architecture ---
 clear
@@ -243,38 +293,35 @@ sleep 2
 
 cd "$HOME/development"
 
-if [ ! -d "$JS8_QT_DIR" ]; then
+if [ ! -d "${JS8_QT_DIR}" ]; then
   if [ "${JS8_ARCH}" = "aarch64" ]; then
-    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/Qt6.9.3_Linux_aarch64.tar.gz
-    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/js8lib3.0-Linux_aarch64.tar.gz
-    tar -xzvf Qt6.9.3_Linux_aarch64.tar.gz -C "$HOME/.local/lib/"
-    mv Qt6.9.3_Linux_aarch64.tar.gz "$HOME/Downloads/"
-    tar -xzvf js8lib3.0-Linux_aarch64.tar.gz -C "$HOME/.local/lib/"
-    mv js8lib3.0-Linux_aarch64.tar.gz "$HOME/Downloads/"
+    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/Qt6.9.3_Linux_aarch64_pkg.tar.gz
+    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/js8lib3.0-Linux_aarch64_pkg.tar.gz
+    sudo tar -xzvf Qt6.9.3_Linux_aarch64_pkg.tar.gz -C "${JS8_INSTALL_PREFIX}"
+    rm Qt6.9.3_Linux_aarch64_pkg.tar.gz
+    sudo tar -xzvf js8lib3.0-Linux_aarch64_pkg.tar.gz -C "${JS8_INSTALL_PREFIX}" --strip-components=1
+    rm js8lib3.0-Linux_aarch64_pkg.tar.gz
   else
-    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/Qt6.9.3_Linux_x86_64.tar.gz
-    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/js8lib3.0-Linux_x86_64.tar.gz
-    tar -xzvf Qt6.9.3_Linux_x86_64.tar.gz -C "$HOME/.local/lib/"
-    mv Qt6.9.3_Linux_x86_64.tar.gz "$HOME/Downloads/"
-    tar -xzvf js8lib3.0-Linux_x86_64.tar.gz -C "$HOME/.local/lib/"
-    mv js8lib3.0-Linux_x86_64.tar.gz "$HOME/Downloads/"
+    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/Qt6.9.3_Linux_x86_64_pkg.tar.gz
+    wget -c https://github.com/JS8Call-improved/js8lib/releases/download/lib%2F3.0/js8lib3.0-Linux_x86_64_pkg.tar.gz
+    sudo tar -xzvf Qt6.9.3_Linux_x86_64_pkg.tar.gz -C "${JS8_INSTALL_PREFIX}"
+    rm Qt6.9.3_Linux_x86_64_pkg.tar.gz
+    sudo tar -xzvf js8lib3.0-Linux_x86_64_pkg.tar.gz -C "${JS8_INSTALL_PREFIX}" --strip-components=1
+    rm js8lib3.0-Linux_x86_64_pkg.tar.gz
   fi
-  echo "Qt 6.9.3 and library archives moved to Downloads folder."
+  echo "Qt 6.9.3 and library archives extracted and removed."
+
+  # Register private library paths with the system linker
+  # This allows JS8Call to find its bundled libraries at runtime
+  echo "${JS8_INSTALL_PREFIX}/lib" | sudo tee /etc/ld.so.conf.d/js8call.conf
+  echo "${JS8_INSTALL_PREFIX}/Qt/lib" | sudo tee -a /etc/ld.so.conf.d/js8call.conf
+  sudo ldconfig
+
 else
   echo "Qt 6.9.3 already installed — skipping download."
   divider
   sleep 2
 fi
-
-# Fix hardcoded paths in pkgconfig files — always runs regardless of
-# whether libraries were just downloaded or already existed.
-# Handles builds from any username
-for pc in "$HOME/.local/lib/js8lib/lib/pkgconfig/"*.pc; do
-  sed -i "s|prefix=.*local/lib/js8lib|prefix=$HOME/.local/lib/js8lib|g" "$pc"
-done
-for pc in "$HOME/.local/lib/Qt/lib/pkgconfig/"*.pc; do
-  sed -i "s|prefix=.*local/lib/Qt|prefix=$HOME/.local/lib/Qt|g" "$pc"
-done
 
 # --- Fetch JS8Call source ---
 clear
@@ -282,12 +329,13 @@ echo "Fetching JS8Call source code..."
 divider
 
 if [ ! -d "$HOME/development/JS8Call-improved" ]; then
+  cd "$HOME/development"
   git clone "https://github.com/JS8Call-improved/JS8Call-improved.git"
-  cd JS8Call-improved
+  cd "$HOME/development/JS8Call-improved"
   git checkout "${JS8_VERSION}"
 else
   echo "Source directory already exists — checking for updates..."
-  cd JS8Call-improved
+  cd "$HOME/development/JS8Call-improved"
   git fetch origin
   git checkout "${JS8_VERSION}"
   git pull origin "${JS8_VERSION}"
@@ -308,32 +356,41 @@ divider
 read -p "Press Enter to continue" </dev/tty
 
 # Remove any previous build directory to avoid stale config
+cd "$HOME/development/JS8Call-improved"
 rm -rf "$HOME/development/JS8Call-improved/build"
-mkdir build
-cd build
+mkdir "$HOME/development/JS8Call-improved/build"
+cd "$HOME/development/JS8Call-improved/build"
 
 cmake \
-  -DCMAKE_PREFIX_PATH="$HOME/.local/lib/js8lib;$HOME/.local/lib/Qt" \
-  -DHAMLIB_ROOT="$HOME/.local/lib/js8lib" \
-  -Dhamlib_ROOT="$HOME/.local/lib/js8lib" \
+  -DCMAKE_PREFIX_PATH="${JS8_INSTALL_PREFIX};${JS8_QT_DIR}" \
+  -DHAMLIB_ROOT="${JS8_INSTALL_PREFIX}" \
+  -Dhamlib_ROOT="${JS8_INSTALL_PREFIX}" \
   ..
 cmake --build . --parallel $(nproc)
 
-# --- Install ---
-cp JS8Call "$HOME/.local/bin/"
+# --- Install binary and desktop integration ---
+sudo cp JS8Call /usr/bin/
+sudo chmod 755 /usr/bin/JS8Call
 
-# --- Desktop entry ---
-cat > "$HOME/.local/share/applications/JS8Call.desktop" << EOF
+# Desktop entry — uses system paths consistent with .deb install
+sudo bash -c 'cat > /usr/share/applications/JS8Call.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=JS8Call
-Exec=$HOME/.local/bin/JS8Call
-Icon=$HOME/.local/share/icons/icon_128.svg
+Exec=/usr/bin/JS8Call
+Icon=js8call
 Terminal=false
 Categories=HamRadio;Network;
-EOF
+EOF'
 
-cp ../artwork/icon_128.svg "$HOME/.local/share/icons/"
+# Install icon to standard hicolor theme location
+sudo mkdir -p /usr/share/icons/hicolor/scalable/apps
+sudo cp ../artwork/icon_128.svg /usr/share/icons/hicolor/scalable/apps/js8call.svg
+
+# Refresh desktop menu database
+if command -v update-desktop-database > /dev/null 2>&1; then
+  sudo update-desktop-database /usr/share/applications
+fi
 
 # --- Cleanup prompt ---
 clear

@@ -3,7 +3,7 @@ set -e
 
 # --- Build a .deb package for JS8Call ---
 # --- Run on Ubuntu 24 Server ---
-# --- Target: Debian 13 (Trixie) ---
+# --- Target: Debian-based systems with glibc 2.39 or later ---
 
 # --- Must not run as root ---
 if [ "$(id -u)" -eq 0 ]; then
