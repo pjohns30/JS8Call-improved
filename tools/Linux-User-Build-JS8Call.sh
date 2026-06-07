@@ -56,6 +56,32 @@ else
   exit 1
 fi
 
+# --- Check for .deb managed installation ---
+if dpkg -l js8call 2>/dev/null | grep -q "^ii"; then
+  divider
+  echo -e "${red}JS8Call is currently installed via the .deb package.
+
+Running this script will overwrite the package-managed installation
+and may cause conflicts with your package manager. It is strongly
+recommended to remove the .deb package first:
+
+  sudo dpkg -r js8call
+
+This ensures a clean installation without package manager conflicts.${clear_color}"
+  divider
+  read -p "Remove the .deb package now and continue? Yes(y) / No(n): " REMOVE_DEB </dev/tty
+  if [ "${REMOVE_DEB}" = "y" ]; then
+    sudo dpkg -r js8call
+    divider
+    echo "Package removed. Continuing with build installation..."
+    divider
+    sleep 2
+  else
+    echo "Please remove the .deb package manually and re-run this script."
+    exit 0
+  fi
+fi
+
 install_deps() {
   if [[ "$DISTRO" == "fedora" || "$DISTRO" == "rhel" || \
         "$DISTRO" == "centos" || "$DISTRO" == "rocky" || \
@@ -222,10 +248,8 @@ installed JS8Call via the .deb package this script will overwrite it.
 
 Legacy versions of JS8Call (i.e. <=2.3.1) are named with a lower-case
 convention (js8call). Versions 2.4.0 and later are named with an upper-case
-convention (JS8Call). These two versions can co-exist on Linux.
-
-If you run this script a second time after installation, it will ask if
-you want to uninstall JS8Call. All libraries will also be removed."
+convention (JS8Call v2.5.0 and later) or JS8Call-improved (v2.4.0). These
+versions can co-exist on Linux."
 divider
 read -p "Press Enter to continue" </dev/tty
 
