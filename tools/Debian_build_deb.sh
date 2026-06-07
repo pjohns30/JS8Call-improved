@@ -174,16 +174,17 @@ Description: JS8Call digital weak signal communication
  JS8Call is a messaging application built on top of the JS8 digital
  mode, providing keyboard-to-keyboard messaging, store-and-forward
  messaging, and automatic position reporting for amateur radio operators.
-Depends: libssl3, libfontconfig1, libfreetype6, libharfbuzz0b,
- libjpeg62, libpng16-16, zlib1g, libbrotli1,
- libdbus-1-3, libglib2.0-0, libatspi2.0-0,
- libgl1, libegl1, libgbm1, libdrm2,
- libxkbcommon0, libxkbcommon-x11-0,
- libxcb-icccm4, libxcb-cursor0,
- libxrender1, libxi6,
- libgstreamer1.0-0, libgstreamer-plugins-base1.0-0,
- libwayland-client0,
- pipewire | pulseaudio
+Depends: libc6 (>= 2.39), libstdc++6, libgcc-s1,
+ libusb-1.0-0, libgl1, libglx0, libglvnd0,
+ libxkbcommon0, libpulse0,
+ libbrotli1, libzstd1, zlib1g, libudev1,
+ libegl1, libfontconfig1, libx11-6, libglib2.0-0,
+ libpng16-16, libharfbuzz0b, libfreetype6,
+ libpcre2-16-0, libdbus-1-3, libcap2, libexpat1,
+ libxcb1, libatomic1, libgraphite2-3, libbz2-1.0,
+ libsndfile1, libx11-xcb1, libsystemd0,
+ libxau6, libxdmcp6, libopus0, libogg0,
+ libmp3lame0, pipewire | pulseaudio
 EOF
 
 # postinst runs on the end user's machine AFTER the package files
