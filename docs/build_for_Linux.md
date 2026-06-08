@@ -3,9 +3,11 @@
 > [!note]
 > Note: We recommend building with QT 6.9.3 for all versions of JS8Call 2.4.0 or newer. While other versions of Qt down to 6.5 are possible to use, there is significant risk that unwanted audio or PTT bugs may be injected into your build. The Qt Group is deprecating use of native audio back ends in favor of standardizing on FFmpeg audio, which requires either PulseAudio or PipeWire on linux. Most linux distributions do not ship with Qt 6.9.3 with proper FFmpeg audio support. Instead of using distribution packaged Qt, you can download pre-built Qt 6.9.3 library packages with FFmpeg audio support built-in [here](https://github.com/JS8Call-improved/js8lib/releases/tag/lib%2F3.0) for both x86_64 and arm64.
 
-Depending on where you install the package (/usr/local/Qt recommended), this will require using `-DCMAKE_PREFIX_PATH=<path_to_your_qt_install>` for build.
+These Qt packages must be unpacked to /usr/lib/js8call/Qt), this will require using `-DCMAKE_PREFIX_PATH=/usr/lib/js8call/Qt` for build.
 
 Alternatively, you can obtain Qt 6.9.3 from qt.io by downloading and using the Qt Online Installer and Qt Maintenence Tool to maintain your installed versions of Qt on your linux distribution. Qt is both commercially and open source licensed. This requires creation of a free account on qt.io which will allow access to their download area to get the Online Installer, where you must agree to use the open source license to build JS8Call.
+
+Before you proceed to build for Linux at all, in the JS8Call-improved source tree there is an automated build script called `Linux-User-Build-JS8Call.sh` in the tools directory. This script is also available for versions 3.0.2 of JS8Call or later and is in the Release assets. You can set the `JS8_VERSION` variable in the header of the script to build any version of JS8Call back to 2.5.0. The script will not build the release/2.4.0 branch since the name of the program was JS8Call-improved for that release during the transition from the old js8call to the new JS8Call.
 
 > [!note]
 > Js8Call-improved is the name of the Github repository and will be present in your paths, the program is JS8Call.
@@ -121,6 +123,9 @@ rm /var/tmp/JS8Call_*_*.deb
 ```
 
 The copying ensures that the user `apt` can read the `.deb` file, even if `$HOME` isn't world-readable.  While not strictly neccessary, `apt-get` is happier if this is the case.
+
+> [!note]
+In the JS8Call source tree, in the tools directory, there is a script called `Debian-build-deb.sh`. Simply obtain that script from the source tree and it will   fetch the necessary libraries and JS8Call source code, build JS8Call and package it as a .deb. Pay attention to your glibc version when doing this. A build done on glibc 2.41 will not run on glibc 2.39, for example.
 
 ### Fedora
 
