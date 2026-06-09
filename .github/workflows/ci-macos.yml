@@ -4,6 +4,13 @@ run-name: ${{ github.event.pull_request.title || github.ref_name }} CI Build for
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run in'
+        type: environment
+        default: CI
+        required: false
 
 env:
   BUILD_TYPE: Release
