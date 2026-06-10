@@ -12,10 +12,9 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 # --- Variables ---
-JS8_VERSION="3.0.2"
 JS8_ARCH=$(uname -m)
 JS8_SOURCE="https://github.com/JS8Call-improved/JS8Call-improved.git"
-JS8_BRANCH="release/3.0.2"
+JS8_BRANCH="master"
 
 # Map uname -m architecture to Debian naming convention
 # Debian uses 'amd64' and 'arm64', not 'x86_64' and 'aarch64'
@@ -104,6 +103,29 @@ cd "$BUILD_DIR"
 git clone "$JS8_SOURCE" JS8Call-improved
 cd JS8Call-improved
 git checkout "$JS8_BRANCH"
+
+# --- Determine version string ---
+# Mirrors the logic in CMakeLists.txt:
+#   - If VERSION is set to a real semver, use that (release build)
+#   - If VERSION is 0.0.0, use the git hash instead (dev build)
+# We read VERSION directly from CMakeLists.txt so there's a single
+# source of truth — no need to update the script when cutting a release
+
+cd "$BUILD_DIR/JS8Call-improved"
+
+# Extract the version from CMakeLists.txt
+CMAKE_VERSION=$(grep -oP 'VERSION\s+\K\d+\.\d+\.\d+' \
+    CMakeLists.txt | head -1)
+
+GIT_HASH=$(git rev-parse --short HEAD)
+
+if [ "$CMAKE_VERSION" = "0.0.0" ]; then
+    JS8_VERSION="$GIT_HASH"
+else
+    JS8_VERSION="$CMAKE_VERSION"
+fi
+
+echo "Build version: $JS8_VERSION"
 
 # --- Build JS8Call ---
 echo "Building JS8Call..."
