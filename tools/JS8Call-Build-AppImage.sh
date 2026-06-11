@@ -60,6 +60,8 @@ sudo apt-get install -y \
     libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
     libwayland-dev wayland-protocols \
     libpulse-dev \
+    libxcb-shape0-dev libxcb-randr0-dev libxcb-sync-dev \
+    libxcb-xfixes0-dev libxcb-xkb-dev libxcb-xinput-dev \
     libasound2-dev || sudo apt-get install -y libasound2t64
     
 # libjpeg-turbo ships as .so.62 on Debian but linuxdeploy-plugin-qt
