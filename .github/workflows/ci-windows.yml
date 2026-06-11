@@ -39,7 +39,7 @@ jobs:
         version: '6.9.3'
         target: 'desktop'
         arch: 'win64_llvm_mingw'
-        modules: 'qtmultimedia qtserialport qtwebsockets qtsvg qtimageformats qtshadertools'
+        modules: 'qtmultimedia qtserialport qtwebsockets qtshadertools'
         tools: 'tools_llvm_mingw1706'
         cache: true
         dir: 'D:/a/JS8Call-improved/JS8Call-improved/local/qt693'
