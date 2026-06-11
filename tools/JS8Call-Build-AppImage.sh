@@ -100,8 +100,8 @@ wget -q --show-progress "$QT_URL" -O Qt.tar.gz
 # This also serves as the source for bundling into the AppImage.
 echo "Extracting libraries to $INSTALL_PREFIX..."
 sudo mkdir -p "$INSTALL_PREFIX"
-sudo tar -xzvf js8lib.tar.gz -C /usr/lib/js8call --strip-components=1
-sudo tar -xzvf Qt.tar.gz -C /usr/lib/js8call
+sudo tar -xzf js8lib.tar.gz -C /usr/lib/js8call --strip-components=1
+sudo tar -xzf Qt.tar.gz -C /usr/lib/js8call
 
 # Fix pkgconfig prefix paths to match this machine
 for pc in /usr/lib/js8call/lib/pkgconfig/*.pc; do
