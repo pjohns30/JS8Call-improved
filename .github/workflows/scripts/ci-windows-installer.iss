@@ -68,13 +68,7 @@ Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\libusb-1.0.dll"; D
 Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\libunwind.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\opengl32sw.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6Core.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6Multimedia.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6Network.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6SerialPort.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6Svg.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\Qt6*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\swresample-5.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\a\JS8Call-improved\JS8Call-improved\build\JS8Call\swscale-8.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\a\JS8Call-improved\JS8Call-improved\icons\windows-icons\js8call.ico"; DestDir: "{app}"; Flags: ignoreversion
