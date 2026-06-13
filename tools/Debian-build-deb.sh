@@ -36,14 +36,7 @@ BUILD_DIR="$HOME/js8call-deb-build"
 STAGING_DIR="$BUILD_DIR/staging"
 # This mirrors the target filesystem layout inside the .deb
 # When dpkg installs the package, it copies these files to /
-PKG_ROOT="$STAGING_DIR/js8call_${JS8_VERSION}_${DEB_ARCH}"
 INSTALL_PREFIX="/usr/lib/js8call"
-
-echo "######################################################################"
-echo " Building JS8Call $JS8_VERSION .deb for Debian 13"
-echo " Architecture: $JS8_ARCH / Debian: $DEB_ARCH"
-echo "######################################################################"
-sleep 2
 
 # --- Install build dependencies ---
 # These are needed to compile JS8Call but will NOT be in the .deb
@@ -126,6 +119,12 @@ else
 fi
 
 echo "Build version: $JS8_VERSION"
+PKG_ROOT="$STAGING_DIR/js8call_${JS8_VERSION}_${DEB_ARCH}"
+echo "######################################################################"
+echo " Building JS8Call $JS8_VERSION .deb for Debian 13"
+echo " Architecture: $JS8_ARCH / Debian: $DEB_ARCH"
+echo "######################################################################"
+sleep 2
 
 # --- Build JS8Call ---
 echo "Building JS8Call..."
@@ -152,8 +151,18 @@ sleep 2
 echo "Populating package staging tree..."
 
 # The binary
+mkdir -p "$PKG_ROOT/usr/lib/js8call/bin"
+cp JS8Call "$PKG_ROOT/usr/lib/js8call/bin/"
+
 mkdir -p "$PKG_ROOT/usr/bin"
-cp JS8Call "$PKG_ROOT/usr/bin/"
+cat > "$PKG_ROOT/usr/bin/JS8Call" << 'EOF'
+#!/bin/bash
+export LD_LIBRARY_PATH=/usr/lib/js8call/lib:/usr/lib/js8call/Qt/lib
+unset KDE_FULL_SESSION
+unset KDE_SESSION_VERSION
+exec /usr/lib/js8call/bin/JS8Call "$@"
+EOF
+chmod 755 "$PKG_ROOT/usr/bin/JS8Call"
 
 # The bundled libraries — these are your private Qt and js8lib
 # They live in /usr/lib/js8call, not in /usr/lib, so they
@@ -209,22 +218,10 @@ Depends: libc6 (>= 2.39), libstdc++6, libgcc-s1,
 EOF
 
 # postinst runs on the end user's machine AFTER the package files
-# are copied into place by dpkg. We use it to:
-# 1. Set the RPATH so JS8Call finds its bundled libraries
-# 2. Update the desktop menu database
+# are copied into place by dpkg. Updates the desktop menu database.
 cat > "$PKG_ROOT/DEBIAN/postinst" << 'EOF'
 #!/bin/bash
 set -e
-
-# Tell the dynamic linker where JS8Call's private libraries are
-# This creates /etc/ld.so.conf.d/js8call.conf and runs ldconfig
-# so the system knows about /usr/lib/js8call without needing
-# LD_LIBRARY_PATH set at runtime
-echo "/usr/lib/js8call" > /etc/ld.so.conf.d/js8call.conf
-echo "/usr/lib/js8call/Qt/lib" >> /etc/ld.so.conf.d/js8call.conf
-ldconfig
-
-# Refresh the desktop application menu
 if command -v update-desktop-database > /dev/null 2>&1; then
     update-desktop-database /usr/share/applications
 fi
@@ -232,15 +229,9 @@ EOF
 chmod 755 "$PKG_ROOT/DEBIAN/postinst"
 
 # postrm runs AFTER the package is removed
-# We clean up the ldconfig entry we created in postinst
 cat > "$PKG_ROOT/DEBIAN/postrm" << 'EOF'
 #!/bin/bash
 set -e
-
-if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
-    rm -f /etc/ld.so.conf.d/js8call.conf
-    ldconfig
-fi
 
 if command -v update-desktop-database > /dev/null 2>&1; then
     update-desktop-database /usr/share/applications
