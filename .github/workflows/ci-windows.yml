@@ -25,6 +25,8 @@ jobs:
       run: git config --global core.autocrlf input
 
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
 
     - name: Setup Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@c25f41106918cde0bf347e6f201277392b3a9e9d

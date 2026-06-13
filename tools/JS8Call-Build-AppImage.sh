@@ -37,7 +37,7 @@ APPDIR="$STAGING_DIR/JS8Call.AppDir"
 INSTALL_PREFIX="/usr/lib/js8call"
 
 echo "######################################################################"
-echo " Building JS8Call $JS8_VERSION AppImage"
+echo " Building JS8Call AppImage"
 echo " Architecture: $JS8_ARCH"
 echo "######################################################################"
 sleep 2
@@ -139,10 +139,12 @@ else
     JS8_VERSION="$CMAKE_VERSION"
 fi
 
-echo "Build version: $JS8_VERSION"
-
 # --- Build JS8Call ---
-echo "Building JS8Call..."
+echo "Build version: $JS8_VERSION"
+echo "######################################################################"
+echo " Building JS8Call $JS8_VERSION AppImage"
+echo " Architecture: $JS8_ARCH"
+echo "######################################################################"
 mkdir build && cd build
 
 cmake \
@@ -196,6 +198,11 @@ cp "$BUILD_DIR/JS8Call-improved/artwork/icon_128.svg" \
 mkdir -p "$APPDIR/usr/lib"
 cp -L /usr/lib/${JS8_ARCH}-linux-gnu/libxcb-cursor.so.0 \
     "$APPDIR/usr/lib/" 2>/dev/null || true
+    
+# AppStream metainfo — for software center integration
+mkdir -p "$APPDIR/usr/share/metainfo"
+cp "$BUILD_DIR/JS8Call-improved/.github/workflows/misc/JS8Call.appdata.xml" \
+    "$APPDIR/usr/share/metainfo/io.github.JS8Call_improved.JS8Call.appdata.xml"
 
 # --- Run linuxdeploy ---
 # linuxdeploy does the heavy lifting:
@@ -209,6 +216,8 @@ cp -L /usr/lib/${JS8_ARCH}-linux-gnu/libxcb-cursor.so.0 \
 # QMAKE points it at our private Qt 6.9.3, not the system Qt,
 # so it bundles the right version
 cd "$BUILD_DIR"
+export EXTRA_PLATFORM_PLUGINS="libqwayland-generic.so;libqwayland-egl.so;libqoffscreen.so;libqeglfs.so;libqlinuxfb.so;libqminimalegl.so;libqminimal.so"
+export EXTRA_QT_MODULES="waylandcompositor"
 export QMAKE=/usr/lib/js8call/Qt/bin/qmake
 
 ./linuxdeploy.AppImage \

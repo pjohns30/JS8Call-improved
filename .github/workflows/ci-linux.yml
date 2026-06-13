@@ -7,6 +7,7 @@ name: CI Build for Linux
 run-name: ${{ (github.event.inputs.environment) || (github.event.pull_request.title) || 'CI' }} Build for Linux
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       environment:
@@ -32,51 +33,48 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04,      arch: x86_64  }
-          - { os: ubuntu-24.04-arm,  arch: aarch64 }
+          - { os: ubuntu-24.04,     arch: x86_64  }
+          - { os: ubuntu-24.04-arm, arch: aarch64 }
 
     steps:
-      - uses: actions/checkout@v5
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
 
-      # The build script handles everything: deps, Qt, libs, AppImage packaging.
-      # It reads the version from CMakeLists.txt so no version input is needed here.
-      - name: Build AppImage
-        run: bash tools/JS8Call-Build-AppImage.sh
+    - name: Build AppImage
+      run: bash tools/JS8Call-Build-AppImage.sh
 
-      # Release builds only: import the GPG signing key and sign the AppImage
-      - name: Import signing key (Release only)
-        if: ${{ inputs.environment == 'Release' }}
-        run: |
-          echo "${{ secrets.RELEASE_APPIMAGE_SIGNING_KEY }}" > /tmp/js8call.key.asc
-          echo "${{ secrets.RELEASE_APPIMAGE_SIGNING_PASS }}" | \
-            gpg --batch --yes --always-trust \
-                --passphrase-fd 0 \
-                --pinentry-mode loopback \
-                --import /tmp/js8call.key.asc
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Import signing key (Release only)
+      if: ${{ inputs.environment == 'Release' }}
+      run: |
+        echo "${{ secrets.RELEASE_APPIMAGE_SIGNING_KEY }}" > /tmp/js8call.key.asc
+        echo "${{ secrets.RELEASE_APPIMAGE_SIGNING_PASS }}" | \
+          gpg --batch --yes --always-trust \
+              --passphrase-fd 0 \
+              --pinentry-mode loopback \
+              --import /tmp/js8call.key.asc
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Sign AppImage (Release only)
-        if: ${{ inputs.environment == 'Release' }}
-        run: |
-          APPIMAGETOOL_SIGN_PASSPHRASE="${{ secrets.RELEASE_APPIMAGE_SIGNING_PASS }}" \
-            gpg --batch --yes --pinentry-mode loopback \
-                --passphrase "${{ secrets.RELEASE_APPIMAGE_SIGNING_PASS }}" \
-                --detach-sign --armor \
-                ~/JS8Call-*.AppImage
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Sign AppImage (Release only)
+      if: ${{ inputs.environment == 'Release' }}
+      run: |
+        gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "${{ secrets.RELEASE_APPIMAGE_SIGNING_PASS }}" \
+            --detach-sign --armor \
+            ~/JS8Call-*.AppImage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Attestation ties the artifact to this specific workflow run — release only
-      - name: Attest (Release only)
-        if: ${{ inputs.environment == 'Release' }}
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
-        with:
-          subject-path: ~/JS8Call-*.AppImage
+    - name: Attest (Release only)
+      if: ${{ inputs.environment == 'Release' }}
+      uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+      with:
+        subject-path: ~/JS8Call-*.AppImage
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: JS8Call-${{ matrix.arch }}
-          path: ~/JS8Call-*.AppImage
-          archive: false
+    - name: Upload artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: JS8Call-${{ matrix.arch }}
+        path: ~/JS8Call-*.AppImage
+        archive: false
