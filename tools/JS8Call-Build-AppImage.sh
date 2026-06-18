@@ -1,5 +1,3 @@
-#!/bin/bash
-set -e
 
 # --- Build an AppImage for JS8Call ---
 # --- Run on Ubuntu 24 Server ---
@@ -14,7 +12,7 @@ fi
 # --- Variables ---
 JS8_ARCH=$(uname -m)
 JS8_SOURCE="https://github.com/JS8Call-improved/JS8Call-improved.git"
-JS8_BRANCH="master"
+JS8_BUILD_BRANCH="master"
 
 # AppImage uses x86_64 and aarch64 — not Debian's amd64/arm64
 if [ "$JS8_ARCH" = "x86_64" ]; then
@@ -114,35 +112,56 @@ done
 # --- Fetch JS8Call source ---
 echo "Fetching JS8Call source..."
 cd "$BUILD_DIR"
-git clone "$JS8_SOURCE" JS8Call-improved
-cd JS8Call-improved
-git checkout "$JS8_BRANCH"
+
+# Check if running inside GitHub Actions
+if [ -n "${GITHUB_WORKSPACE:-}" ]; then
+    echo "CI Environment Detected. Tracking local GitHub Workspace context..."
+    
+    # Clone locally from the runner's pre-checked-out workspace.
+    git clone "$GITHUB_WORKSPACE" JS8Call-improved
+    cd JS8Call-improved
+    
+    # Extract and log the actual branch name from the cloned workspace
+    ACTIVE_BRANCH=$(git branch --show-current)
+    echo "Active CI Target Branch: $ACTIVE_BRANCH"
+    
+else
+    # Local Fallback Setup
+    JS8_BRANCH="$JS8_BUILD_BRANCH"
+    echo "Local Environment Detected. Cloning remote fallback branch: $JS8_BRANCH"
+    
+    git clone "$JS8_SOURCE" JS8Call-improved
+    cd JS8Call-improved
+    git checkout "$JS8_BRANCH"
+    
+    ACTIVE_BRANCH="$JS8_BRANCH"
+    echo "Active Local Target Branch: $ACTIVE_BRANCH"
+fi
 
 # --- Determine version string ---
-# Mirrors the logic in CMakeLists.txt:
-#   - If VERSION is set to a real semver, use that (release build)
-#   - If VERSION is 0.0.0, use the git hash instead (dev build)
-# We read VERSION directly from CMakeLists.txt so there's a single
-# source of truth — no need to update the script when cutting a release
-
 cd "$BUILD_DIR/JS8Call-improved"
 
-# Extract the version from CMakeLists.txt
-CMAKE_VERSION=$(grep -oP 'VERSION\s+\K\d+\.\d+\.\d+' \
-    CMakeLists.txt | head -1)
+# 1. Parse the exact VERSION declaration directly from CMakeLists.txt
+CMAKE_VERSION=$(grep -oP 'VERSION\s+\K\d+\.\d+\.\d+' CMakeLists.txt | head -1 || echo "0.0.0")
 
-GIT_HASH=$(git rev-parse --short HEAD)
-
+# 2. Check if it's a dev build or an official release
 if [ "$CMAKE_VERSION" = "0.0.0" ]; then
-    JS8_VERSION="$GIT_HASH"
+    # Dev build: Fall back to the short git commit hash
+    export VERSION=$(git rev-parse --short HEAD)
 else
-    JS8_VERSION="$CMAKE_VERSION"
+    # Release build: Prepend 'v' to the real version number from CMakeLists.txt
+    export VERSION="v$CMAKE_VERSION"
 fi
+
+# 3. Synchronize banner tracking variable
+JS8_VERSION="$VERSION"
+
+echo "AppImage Target Export Version: $JS8_VERSION"
 
 # --- Build JS8Call ---
 echo "Build version: $JS8_VERSION"
 echo "######################################################################"
-echo " Building JS8Call $JS8_VERSION AppImage"
+echo " Building JS8Call $JS8_VERSION AppImage on ($ACTIVE_BRANCH)"
 echo " Architecture: $JS8_ARCH"
 echo "######################################################################"
 mkdir build && cd build
