@@ -116,24 +116,24 @@ cd "$BUILD_DIR"
 # Check if running inside GitHub Actions
 if [ -n "${GITHUB_WORKSPACE:-}" ]; then
     echo "CI Environment Detected. Tracking local GitHub Workspace context..."
-    
+
     # Clone locally from the runner's pre-checked-out workspace.
     git clone "$GITHUB_WORKSPACE" JS8Call-improved
     cd JS8Call-improved
-    
+
     # Extract and log the actual branch name from the cloned workspace
     ACTIVE_BRANCH=$(git branch --show-current)
     echo "Active CI Target Branch: $ACTIVE_BRANCH"
-    
+
 else
     # Local Fallback Setup
     JS8_BRANCH="$JS8_BUILD_BRANCH"
     echo "Local Environment Detected. Cloning remote fallback branch: $JS8_BRANCH"
-    
+
     git clone "$JS8_SOURCE" JS8Call-improved
     cd JS8Call-improved
     git checkout "$JS8_BRANCH"
-    
+
     ACTIVE_BRANCH="$JS8_BRANCH"
     echo "Active Local Target Branch: $ACTIVE_BRANCH"
 fi
@@ -217,7 +217,7 @@ cp "$BUILD_DIR/JS8Call-improved/artwork/icon_128.svg" \
 mkdir -p "$APPDIR/usr/lib"
 cp -L /usr/lib/${JS8_ARCH}-linux-gnu/libxcb-cursor.so.0 \
     "$APPDIR/usr/lib/" 2>/dev/null || true
-    
+
 # AppStream metainfo — for software center integration
 mkdir -p "$APPDIR/usr/share/metainfo"
 cp "$BUILD_DIR/JS8Call-improved/.github/workflows/misc/JS8Call.appdata.xml" \
