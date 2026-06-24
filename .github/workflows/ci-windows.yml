@@ -82,7 +82,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-clang++ `
           -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres `
           -DQt6_DIR="$workspace/qt611/lib/cmake/Qt6" `
-          -DCMAKE_PREFIX_PATH="$workspace/qt611;$workspace/js8lib/boost-1.88;$workspace/js8lib/hamlib-4.7.1;$workspace/js8lib/fftw3;$workspace/js8lib/libusb-1.0.29" ..
+          -DCMAKE_PREFIX_PATH="$workspace/qt611;$workspace/js8lib/boost-1.88;$workspace/js8lib/hamlib-4.7.2;$workspace/js8lib/fftw3;$workspace/js8lib/libusb-1.0.29" ..
 
     - name: Extract version
       shell: pwsh
