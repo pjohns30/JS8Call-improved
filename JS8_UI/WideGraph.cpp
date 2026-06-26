@@ -367,12 +367,12 @@ bool WideGraph::isAutoSyncEnabled() const {
 }
 
 bool WideGraph::shouldAutoSyncSubmode(int const submode) const {
-    return isAutoSyncEnabled() && (submode == Varicode::JS8CallSlow ||
-                                   submode == Varicode::JS8CallNormal
-                                   //  || submode == Varicode::JS8CallFast
-                                   //  || submode == Varicode::JS8CallTurbo
-                                   //  || submode == Varicode::JS8CallUltra
-                                  );
+    return isAutoSyncEnabled() &&
+           (submode == Varicode::JS8CallSlow ||
+            submode == Varicode::JS8CallNormal ||
+            submode == Varicode::JS8CallFast ||
+            submode == Varicode::JS8CallTurbo ||
+            submode == Varicode::JS8CallUltra);
 }
 
 void WideGraph::notifyDriftedSignalsDecoded(int const signalsDecoded) {

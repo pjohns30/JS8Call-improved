@@ -317,6 +317,7 @@ target_sources(
   JS8_Mainwindow/processRxActivity.cpp
   JS8_Mainwindow/UI_Constructor.cpp
   JS8_Mainwindow/confirmThenEnqueueMessage.cpp
+  JS8_Mainwindow/timeSyncBatch.cpp
   JS8_Mode/DecodedText.cpp
   JS8_Mode/Detector.cpp
   JS8_Mode/FrequencyTracker.cpp

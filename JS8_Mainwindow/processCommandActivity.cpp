@@ -27,6 +27,15 @@ void UI_Constructor::processCommandActivity() {
 
     auto now = DriftingDateTime::currentDateTimeUtc();
 
+    // Expire stale time-sync requests.
+    for (auto it = m_timeSyncPending.begin(); it != m_timeSyncPending.end();) {
+        if (it.value().created.secsTo(now) > 30 * 60) {
+            it = m_timeSyncPending.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
     while (!m_rxCommandQueue.isEmpty()) {
         auto d = m_rxCommandQueue.dequeue();
 
@@ -856,6 +865,110 @@ void UI_Constructor::processCommandActivity() {
             continue;
         }
 
+        // PROCESS TIME SYNC RESPONSE
+        else if (d.cmd == " " && !isAllCall && !isGroupCall) {
+            static QRegularExpression const timeReplyRe(
+                R"(^\s*TIME\s+RID\s+(\S+)\s+T1\s+(-?\d+)\s+T2\s+(-?\d+)\s+T3\s+(-?\d+)\s*$)");
+
+            auto const match = timeReplyRe.match(d.text);
+            if (match.hasMatch()) {
+                auto const rid = match.captured(1).trimmed().toUpper();
+                bool ok1 = false, ok2 = false, ok3 = false;
+                qint64 const t1FromReply = match.captured(2).toLongLong(&ok1);
+                qint64 const t2 = match.captured(3).toLongLong(&ok2);
+                qint64 const t3 = match.captured(4).toLongLong(&ok3);
+                qint64 const t4 = d.utcTimestamp.isValid()
+                                      ? d.utcTimestamp.toMSecsSinceEpoch()
+                                      : DriftingDateTime::currentMSecsSinceEpoch();
+
+                if (!(ok1 && ok2 && ok3)) {
+                    continue;
+                }
+
+                auto pending = m_timeSyncPending.find(rid);
+                if (pending == m_timeSyncPending.end()) {
+                    continue;
+                }
+
+                auto const remoteCall = d.from.trimmed().toUpper();
+                auto const expected = pending.value().remoteCall;
+                if (!(remoteCall == expected ||
+                      Radio::base_callsign(remoteCall) ==
+                          Radio::base_callsign(expected))) {
+                    continue;
+                }
+
+                qint64 const t1 = pending.value().t1ms;
+                if (qAbs(t1 - t1FromReply) > 2000) {
+                    // Keep using our locally recorded T1 if the echoed value
+                    // differs unexpectedly.
+                }
+
+                // NTP-style offset/delay estimate.
+                double const offsetMs =
+                    ((double)(t2 - t1) + (double)(t3 - t4)) / 2.0;
+                qint64 const delayMs = (t4 - t1) - (t3 - t2);
+
+                m_timeSyncPending.erase(pending);
+
+                // Reject stale/invalid exchanges.
+                if (delayMs < 0 || delayMs > (15 * 60 * 1000) ||
+                    qAbs(offsetMs) > (6 * 60 * 60 * 1000.0)) {
+                    writeNoticeTextToUI(
+                        DriftingDateTime::currentDateTimeUtc(),
+                        QString("TIME sync from %1 rejected (delay=%2 ms, "
+                                "offset=%3 ms)")
+                            .arg(d.from)
+                            .arg(delayMs)
+                            .arg((int)qRound(offsetMs)));
+                    continue;
+                }
+
+                // BATCH MODE: If batch is active, collect response instead of
+                // applying immediately
+                if (m_timeSyncBatch.active) {
+                    m_timeSyncBatch.responses.insert(rid, (int)qRound(offsetMs));
+
+                    writeNoticeTextToUI(
+                        DriftingDateTime::currentDateTimeUtc(),
+                        QString("Batch TIME sync response from %1: offset=%2 ms "
+                                "([%3/%4])")
+                            .arg(d.from)
+                            .arg((int)qRound(offsetMs))
+                            .arg(m_timeSyncBatch.responses.count())
+                            .arg(m_timeSyncBatch.targetCount));
+
+                    // If we have all responses, validate and apply now
+                    if (m_timeSyncBatch.responses.count() >=
+                        m_timeSyncBatch.targetCount) {
+                        if (m_timeSyncBatch.timeoutTimer)
+                            m_timeSyncBatch.timeoutTimer->stop();
+                        validateAndApplyTimeSyncBatch();
+                    }
+
+                    continue;
+                }
+
+                // SINGLE-STATION MODE: Apply immediately
+                qint64 const currentDrift = DriftingDateTime::drift();
+                qint64 const newDrift =
+                    currentDrift + (qint64)qRound(offsetMs);
+                setDrift((int)newDrift);
+
+                writeNoticeTextToUI(
+                    DriftingDateTime::currentDateTimeUtc(),
+                    QString("TIME sync with %1: delay=%2 ms, offset=%3 ms, "
+                            "drift %4 -> %5 ms")
+                        .arg(d.from)
+                        .arg(delayMs)
+                        .arg((int)qRound(offsetMs))
+                        .arg(currentDrift)
+                        .arg(newDrift));
+
+                continue;
+            }
+        }
+
         // PROCESS BUFFERED CMD
         else if (d.cmd == " CMD" && !isAllCall) {
             qCDebug(mainwindow_js8) << "skipping incoming command" << d.text;
@@ -883,6 +996,39 @@ void UI_Constructor::processCommandActivity() {
 
             auto cmd = segs.first();
             segs.removeFirst();
+
+            if (cmd == "TIME?") {
+                QString rid = "NA";
+                qint64 t1 = d.utcTimestamp.isValid()
+                                ? d.utcTimestamp.toMSecsSinceEpoch()
+                                : DriftingDateTime::currentMSecsSinceEpoch();
+
+                for (int i = 0; i + 1 < segs.size(); i += 2) {
+                    auto const key = segs.at(i).trimmed().toUpper();
+                    auto const value = segs.at(i + 1).trimmed();
+                    if (key == "RID") {
+                        rid = value.toUpper();
+                    } else if (key == "T1") {
+                        bool ok = false;
+                        auto parsed = value.toLongLong(&ok);
+                        if (ok) {
+                            t1 = parsed;
+                        }
+                    }
+                }
+
+                auto const t2 = d.utcTimestamp.isValid()
+                                    ? d.utcTimestamp.toMSecsSinceEpoch()
+                                    : DriftingDateTime::currentMSecsSinceEpoch();
+                auto const t3 = DriftingDateTime::currentMSecsSinceEpoch();
+
+                reply = QString("%1 TIME RID %2 T1 %3 T2 %4 T3 %5")
+                            .arg(replyPath)
+                            .arg(rid)
+                            .arg(t1)
+                            .arg(t2)
+                            .arg(t3);
+            }
 
             if (cmd == "MSG" && !segs.isEmpty()) {
                 auto inbox = Inbox(inboxPath());

@@ -176,6 +176,49 @@ void UI_Constructor::buildQueryMenu(QMenu *menu, QString call) {
             toggleTx(true);
     });
 
+    auto timeQueryAction = menu->addAction(
+        QString("%1 QUERY TIME? - Request precise time exchange for clock sync")
+            .arg(call)
+            .trimmed());
+    timeQueryAction->setDisabled(isAllCall);
+    connect(timeQueryAction, &QAction::triggered, this, [this]() {
+        QString selectedCall = callsignSelected();
+        if (selectedCall.isEmpty()) {
+            return;
+        }
+
+        auto const t1 = DriftingDateTime::currentMSecsSinceEpoch();
+        auto const rid =
+            QString::number((quint64)t1, 36).right(8).toUpper();
+
+        m_timeSyncPending.insert(
+            rid, {selectedCall.trimmed().toUpper(), t1,
+                  DriftingDateTime::currentDateTimeUtc()});
+
+        addMessageText(QString("%1 QUERY TIME? RID %2 T1 %3")
+                           .arg(selectedCall)
+                           .arg(rid)
+                           .arg(t1),
+                       true);
+
+        if (m_config.transmit_directed())
+            toggleTx(true);
+    });
+
+    auto batchTimeQueryAction = menu->addAction(
+        QString("%1 BATCH TIME SYNC (Top 3-5 by signal strength) - Query multiple "
+                "strong stations and validate offsets")
+            .arg(call)
+            .trimmed());
+    batchTimeQueryAction->setDisabled(isAllCall);
+    connect(batchTimeQueryAction, &QAction::triggered, this, [this]() {
+        // Start batch query with 5 stations (or fewer if not enough heard)
+        startTimeSyncBatchQuery(5);
+
+        if (m_config.transmit_directed())
+            toggleTx(true);
+    });
+
     auto heardQueryAction = menu->addAction(
         QString("%1 HEARING? - What are the stations are you hearing? (Top 4 "
                 "ranked by most recently heard)")

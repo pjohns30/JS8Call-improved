@@ -65,6 +65,18 @@ void UI_Constructor::processDecodeEvent(JS8::Event::Variant const &event) {
                         qint32 newDrift = driftQueue.first();
                         driftQueue.removeFirst();
 
+                        // Reject large outliers so one bad decode does not
+                        // yank timing.
+                        if (m_driftMsMMA_N > 1) {
+                            qint32 const outlierLimitMs =
+                                2 * 1000 *
+                                JS8::Submode::period(Varicode::JS8CallNormal);
+                            if (qAbs(newDrift - m_driftMsMMA) >
+                                outlierLimitMs) {
+                                continue;
+                            }
+                        }
+
                         m_driftMsMMA =
                             (((m_driftMsMMA_N - 1) * m_driftMsMMA) + newDrift) /
                             m_driftMsMMA_N;

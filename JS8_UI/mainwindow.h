@@ -930,6 +930,23 @@ class UI_Constructor : public QMainWindow {
     int m_nextConfirmId = 0;
     QMap<int, PendingConfirmation> m_pendingConfirmations;
 
+    struct TimeSyncPending {
+        QString remoteCall;
+        qint64 t1ms;
+        QDateTime created;
+    };
+    QHash<QString, TimeSyncPending> m_timeSyncPending; // rid -> pending exchange
+
+    // Batch time sync state (multi-station validation mode)
+    struct TimeSyncBatch {
+        bool active = false;                  // Is batch query active?
+        int targetCount = 0;                  // How many responses to collect (3-5)
+        QHash<QString, int> responses;        // RID -> offset in milliseconds
+        QDateTime started;                    // When batch was initiated
+        QTimer *timeoutTimer = nullptr;       // Cleanup timer
+    };
+    TimeSyncBatch m_timeSyncBatch;
+
     QMap<QString, QDateTime>
         m_callSelectedTime; // call -> timestamp when callsign was last selected
     /**
@@ -1073,6 +1090,12 @@ class UI_Constructor : public QMainWindow {
     void tx_watchdog(bool triggered);
     void write_frequency_entry(QString const &file_name);
     void write_transmit_entry(QString const &file_name);
+
+    // Time sync batch mode helpers
+    QList<CallDetail> getTopStationsBySnr(int count);
+    void startTimeSyncBatchQuery(int targetCount);
+    void onTimeSyncBatchTimeout();
+    void validateAndApplyTimeSyncBatch();
 };
 
 #endif // MAINWINDOW_H
